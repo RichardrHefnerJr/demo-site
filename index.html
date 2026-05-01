@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profiles Viewer</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f4f4f4;
+      color: #333;
+    }
+    header {
+      background: #20232a;
+      color: #fff;
+      padding: 1rem;
+      text-align: center;
+    }
+    #message {
+      margin: 1rem;
+      text-align: center;
+    }
+    #frames {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1rem;
+      padding: 1rem;
+    }
+    .profile-frame {
+      border: 1px solid #ccc;
+      background: #fff;
+      min-height: 380px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .profile-frame header {
+      background: #eee;
+      padding: 0.75rem;
+      font-weight: bold;
+    }
+    .profile-frame iframe {
+      flex: 1;
+      border: 0;
+      width: 100%;
+      min-height: 320px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Profiles Directory Viewer</h1>
+    <p>Each HTML file in the <code>profiles</code> directory is shown below.</p>
+  </header>
+
+  <div id="message">Loading profile files...</div>
+  <div id="frames"></div>
+
+  <script>
+    async function loadProfiles() {
+      const message = document.getElementById('message');
+      const frames = document.getElementById('frames');
+
+      try {
+        const response = await fetch('profiles/');
+        if (!response.ok) {
+          throw new Error('Unable to load profiles directory.');
+        }
+        const text = await response.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(text, 'text/html');
+        const links = Array.from(doc.querySelectorAll('a'))
+          .map(link => link.getAttribute('href'))
+          .filter(href => href && href.endsWith('.html'))
+          .filter((href, index, self) => self.indexOf(href) === index);
+
+        if (!links.length) {
+          message.textContent = 'No HTML files found in the profiles directory.';
+          return;
+        }
+
+        message.textContent = `${links.length} profile file(s) found.`;
+
+        links.forEach(href => {
+          const frameCard = document.createElement('div');
+          frameCard.className = 'profile-frame';
+
+          const frameHeader = document.createElement('header');
+          frameHeader.textContent = href;
+          frameCard.appendChild(frameHeader);
+
+          const iframe = document.createElement('iframe');
+          iframe.src = `profiles/${href}`;
+          iframe.title = href;
+          frameCard.appendChild(iframe);
+
+          frames.appendChild(frameCard);
+        });
+      } catch (error) {
+        message.textContent = 'Failed to load profile files. Please ensure directory listing is enabled on the server.';
+        console.error(error);
+      }
+    }
+
+    loadProfiles();
+  </script>
+</body>
+</html>
